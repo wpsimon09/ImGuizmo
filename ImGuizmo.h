@@ -99,7 +99,8 @@ void EditTransform(const Camera& camera, matrix_t& matrix)
    }
    ImGuiIO& io = ImGui::GetIO();
    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-   ImGuizmo::Manipulate(camera.mView.m16, camera.mProjection.m16, mCurrentGizmoOperation, mCurrentGizmoMode, matrix.m16, NULL, useSnap ? &snap.x : NULL);
+   ImGuizmo::Manipulate(camera.mView.m16, camera.mProjection.m16, mCurrentGizmoOperation, mCurrentGizmoMode, matrix.m16,
+                        NULL, useSnap ? &snap.x : NULL);
 }
 #endif
 #pragma once
@@ -117,7 +118,8 @@ void EditTransform(const Camera& camera, matrix_t& matrix)
 
 struct ImGuiWindow;
 
-namespace IMGUIZMO_NAMESPACE
+namespace
+IMGUIZMO_NAMESPACE
 {
    // call inside your own window and before Manipulate() in order to draw gizmo to that window.
    // Or pass a specific ImDrawList to draw to (e.g. ImGui::GetForegroundDrawList()).
@@ -163,7 +165,8 @@ namespace IMGUIZMO_NAMESPACE
    //
    // These functions have some numerical stability issues for now. Use with caution.
    IMGUI_API void DecomposeMatrixToComponents(const float* matrix, float* translation, float* rotation, float* scale);
-   IMGUI_API void RecomposeMatrixFromComponents(const float* translation, const float* rotation, const float* scale, float* matrix);
+   IMGUI_API void RecomposeMatrixFromComponents(const float* translation, const float* rotation, const float* scale,
+                                                float* matrix);
 
    IMGUI_API void SetRect(float x, float y, float width, float height);
    // default is false
@@ -179,20 +182,20 @@ namespace IMGUIZMO_NAMESPACE
    // translation is applied in world space
    enum OPERATION
    {
-      TRANSLATE_X      = (1u << 0),
-      TRANSLATE_Y      = (1u << 1),
-      TRANSLATE_Z      = (1u << 2),
-      ROTATE_X         = (1u << 3),
-      ROTATE_Y         = (1u << 4),
-      ROTATE_Z         = (1u << 5),
-      ROTATE_SCREEN    = (1u << 6),
-      SCALE_X          = (1u << 7),
-      SCALE_Y          = (1u << 8),
-      SCALE_Z          = (1u << 9),
-      BOUNDS           = (1u << 10),
-      SCALE_XU         = (1u << 11),
-      SCALE_YU         = (1u << 12),
-      SCALE_ZU         = (1u << 13),
+      TRANSLATE_X = (1u << 0),
+      TRANSLATE_Y = (1u << 1),
+      TRANSLATE_Z = (1u << 2),
+      ROTATE_X = (1u << 3),
+      ROTATE_Y = (1u << 4),
+      ROTATE_Z = (1u << 5),
+      ROTATE_SCREEN = (1u << 6),
+      SCALE_X = (1u << 7),
+      SCALE_Y = (1u << 8),
+      SCALE_Z = (1u << 9),
+      BOUNDS = (1u << 10),
+      SCALE_XU = (1u << 11),
+      SCALE_YU = (1u << 12),
+      SCALE_ZU = (1u << 13),
 
       TRANSLATE = TRANSLATE_X | TRANSLATE_Y | TRANSLATE_Z,
       ROTATE = ROTATE_X | ROTATE_Y | ROTATE_Z | ROTATE_SCREEN,
@@ -203,7 +206,7 @@ namespace IMGUIZMO_NAMESPACE
 
    inline OPERATION operator|(OPERATION lhs, OPERATION rhs)
    {
-     return static_cast<OPERATION>(static_cast<int>(lhs) | static_cast<int>(rhs));
+      return static_cast<OPERATION>(static_cast<int>(lhs) | static_cast<int>(rhs));
    }
 
    enum MODE
@@ -212,41 +215,43 @@ namespace IMGUIZMO_NAMESPACE
       WORLD
    };
 
-   IMGUI_API bool Manipulate(const float* view, const float* projection, OPERATION operation, MODE mode, float* matrix, float* deltaMatrix = NULL, const float* snap = NULL, const float* localBounds = NULL, const float* boundsSnap = NULL);
-   //
-   // Please note that this cubeview is patented by Autodesk : https://patents.google.com/patent/US7782319B2/en
-   // It seems to be a defensive patent in the US. I don't think it will bring troubles using it as
-   // other software are using the same mechanics. But just in case, you are now warned!
-   //
-   IMGUI_API void ViewManipulate(float* view, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor);
+   IMGUI_API bool Manipulate(const float* view, const float* projection, OPERATION operation, MODE mode, float* matrix,
+                             float* deltaMatrix = NULL, const float* snap = NULL, const float* localBounds = NULL,
+                             const float* boundsSnap = NULL);
+
+   IMGUI_API void ViewManipulate(float* view, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor,
+                                 ImVec4 target);
 
    // use this version if you did not call Manipulate before and you are just using ViewManipulate
-   IMGUI_API void ViewManipulate(float* view, const float* projection, OPERATION operation, MODE mode, float* matrix, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor);
+   IMGUI_API void ViewManipulate(float* view, const float* projection, OPERATION operation, MODE mode, float* matrix,
+                                 float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor);
 
    IMGUI_API void SetAlternativeWindow(ImGuiWindow* window);
 
    [[deprecated("Use PushID/PopID instead.")]]
    IMGUI_API void SetID(int id);
 
-	// ID stack/scopes
-	// Read the FAQ (docs/FAQ.md or http://dearimgui.org/faq) for more details about how ID are handled in dear imgui.
-	// - Those questions are answered and impacted by understanding of the ID stack system:
-	//   - "Q: Why is my widget not reacting when I click on it?"
-	//   - "Q: How can I have widgets with an empty label?"
-	//   - "Q: How can I have multiple widgets with the same label?"
-	// - Short version: ID are hashes of the entire ID stack. If you are creating widgets in a loop you most likely
-	//   want to push a unique identifier (e.g. object pointer, loop index) to uniquely differentiate them.
-	// - You can also use the "Label##foobar" syntax within widget label to distinguish them from each others.
-	// - In this header file we use the "label"/"name" terminology to denote a string that will be displayed + used as an ID,
-	//   whereas "str_id" denote a string that is only used as an ID and not normally displayed.
-	IMGUI_API void          PushID(const char* str_id);                                     // push string into the ID stack (will hash string).
-	IMGUI_API void          PushID(const char* str_id_begin, const char* str_id_end);       // push string into the ID stack (will hash string).
-	IMGUI_API void          PushID(const void* ptr_id);                                     // push pointer into the ID stack (will hash pointer).
-	IMGUI_API void          PushID(int int_id);                                             // push integer into the ID stack (will hash integer).
-	IMGUI_API void          PopID();                                                        // pop from the ID stack.
-	IMGUI_API ImGuiID       GetID(const char* str_id);                                      // calculate unique ID (hash of whole ID stack + given parameter). e.g. if you want to query into ImGuiStorage yourself
-	IMGUI_API ImGuiID       GetID(const char* str_id_begin, const char* str_id_end);
-	IMGUI_API ImGuiID       GetID(const void* ptr_id);
+   // ID stack/scopes
+   // Read the FAQ (docs/FAQ.md or http://dearimgui.org/faq) for more details about how ID are handled in dear imgui.
+   // - Those questions are answered and impacted by understanding of the ID stack system:
+   //   - "Q: Why is my widget not reacting when I click on it?"
+   //   - "Q: How can I have widgets with an empty label?"
+   //   - "Q: How can I have multiple widgets with the same label?"
+   // - Short version: ID are hashes of the entire ID stack. If you are creating widgets in a loop you most likely
+   //   want to push a unique identifier (e.g. object pointer, loop index) to uniquely differentiate them.
+   // - You can also use the "Label##foobar" syntax within widget label to distinguish them from each others.
+   // - In this header file we use the "label"/"name" terminology to denote a string that will be displayed + used as an ID,
+   //   whereas "str_id" denote a string that is only used as an ID and not normally displayed.
+   IMGUI_API void PushID(const char* str_id); // push string into the ID stack (will hash string).
+   IMGUI_API void PushID(const char* str_id_begin, const char* str_id_end);
+   // push string into the ID stack (will hash string).
+   IMGUI_API void PushID(const void* ptr_id); // push pointer into the ID stack (will hash pointer).
+   IMGUI_API void PushID(int int_id); // push integer into the ID stack (will hash integer).
+   IMGUI_API void PopID(); // pop from the ID stack.
+   IMGUI_API ImGuiID GetID(const char* str_id);
+   // calculate unique ID (hash of whole ID stack + given parameter). e.g. if you want to query into ImGuiStorage yourself
+   IMGUI_API ImGuiID GetID(const char* str_id_begin, const char* str_id_end);
+   IMGUI_API ImGuiID GetID(const void* ptr_id);
 
    // return true if the cursor is over the operation's gizmo
    IMGUI_API bool IsOver(OPERATION op);
@@ -268,14 +273,14 @@ namespace IMGUIZMO_NAMESPACE
 
    enum COLOR
    {
-      DIRECTION_X,      // directionColor[0]
-      DIRECTION_Y,      // directionColor[1]
-      DIRECTION_Z,      // directionColor[2]
-      PLANE_X,          // planeColor[0]
-      PLANE_Y,          // planeColor[1]
-      PLANE_Z,          // planeColor[2]
-      SELECTION,        // selectionColor
-      INACTIVE,         // inactiveColor
+      DIRECTION_X, // directionColor[0]
+      DIRECTION_Y, // directionColor[1]
+      DIRECTION_Z, // directionColor[2]
+      PLANE_X, // planeColor[0]
+      PLANE_Y, // planeColor[1]
+      PLANE_Z, // planeColor[2]
+      SELECTION, // selectionColor
+      INACTIVE, // inactiveColor
       TRANSLATION_LINE, // translationLineColor
       SCALE_LINE,
       ROTATION_USING_BORDER,
@@ -290,14 +295,14 @@ namespace IMGUIZMO_NAMESPACE
    {
       IMGUI_API Style();
 
-      float TranslationLineThickness;   // Thickness of lines for translation gizmo
-      float TranslationLineArrowSize;   // Size of arrow at the end of lines for translation gizmo
-      float RotationLineThickness;      // Thickness of lines for rotation gizmo
+      float TranslationLineThickness; // Thickness of lines for translation gizmo
+      float TranslationLineArrowSize; // Size of arrow at the end of lines for translation gizmo
+      float RotationLineThickness; // Thickness of lines for rotation gizmo
       float RotationOuterLineThickness; // Thickness of line surrounding the rotation gizmo
-      float ScaleLineThickness;         // Thickness of lines for scale gizmo
-      float ScaleLineCircleSize;        // Size of circle at the end of lines for scale gizmo
-      float HatchedAxisLineThickness;   // Thickness of hatched axis lines
-      float CenterCircleSize;           // Size of circle at the center of the translate/scale gizmo
+      float ScaleLineThickness; // Thickness of lines for scale gizmo
+      float ScaleLineCircleSize; // Size of circle at the end of lines for scale gizmo
+      float HatchedAxisLineThickness; // Thickness of hatched axis lines
+      float CenterCircleSize; // Size of circle at the center of the translate/scale gizmo
 
       ImVec4 Colors[COLOR::COUNT];
    };
